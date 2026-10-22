@@ -3,6 +3,10 @@
 ## 中文
 
 - **2026-10-22，维护分支更新**：适配目标改为 Harness **0.2.1-rc.2**。此版本来自 `zzfzgs-vick/dsh-purge`，保留原作者小杨（YuJunZhiXue）的署名和许可；不代表上游已发布同名版本。
+- **同版本补充修复：红队模式加载失败**。本次仍属于 **1.1.72 维护分支更新**，不提升版本号。此前的 1.1.72 提交仍包含废弃 `toolFilter`，仅凭版本号不能判断是否已获取本补丁；已安装用户需更新到本分支最新 master 提交后完全退出并重开宿主。
+- 根因：Harness 在加载 `tool-subagent` 时明确拒绝 `toolFilter`；插件模板与已有用户预设同时保留旧字段，旧安装迁移未清理，因此整个红队预设被标记为 broken。
+- 模板改用 `agentPreset: redteam-executor`，保留 `maxDepth: 1`。新增独立执行角色预设，不挂载 subagent、workflow、ralph 委派入口，保留任务工具和消息控制；主红队模式继续保留派活能力。
+- 启动时先注册执行角色，再注册主红队预设。已有用户预设只就地迁移 spawn 行的废弃配置，保留角色正文与无关自定义项；执行角色识别及卸载时的默认预设清理同步适配。
 - 修复 `deployment:persona-suffix` 中旧 `{{cwd}}` 变量导致的首轮失败：同时移除配置和运行时补入路径，由宿主提供必需目录上下文。
 - 修复子智能体并发统计：联合目录与驻留 Session 计数，预留与运行任务关联后去重，避免漏计。预留键使用唯一标识，避免同毫秒申请覆盖。
 - 通过事件 carrier 获取父智能体，并以 `runId` 精确关联 start/end 与预留，修复结束后不释放名额；处理乱序结束、多根会话隔离与嵌套父链，避免释放其他任务的名额。
@@ -10,19 +14,22 @@
 - 新增共享目录解析模块，组装、目录捕获及回退读取当前目录；离线回退从持久目录变更事件恢复，而非始终使用创建时目录。
 - ZIP 更新完整替换 `presets`、`skills`，清除过期资源；演练台更新前置检查同步修复子会话活动判定。
 - 本维护分支的安装元数据、README 安装地址、更新器及演练台仓库默认值改为 `zzfzgs-vick/dsh-purge`，防止后续更新退回上游代码。上游署名、许可和历史链接保留。
-- 验证：Windows 官方宿主上 55 个 JS 文件语法检查、56 个工具注册、真实 Cordis/SystemPrompt 接口、内存并发/队列/目录场景及本地 ZIP 更新模拟通过。基础 cwd 修复经使用者对话确认；整套适配未做真实模型 API、演练、远端更新或重启端到端验证，未验证其他宿主版本与操作系统；未新增测试源码。
+- 验证：Windows 官方宿主上 56 个 JS 文件语法检查、56 个工具注册、真实 Cordis/SystemPrompt 接口、内存并发/队列/目录场景及本地 ZIP 更新模拟通过。此次补充使用真实 Loader、预设注册表及插件 redteam 启动入口，在隔离目录中验证旧预设自动迁移、两个完整预设挂载和空闲 Agent 初始化，确认执行角色没有再次委派工具。此前的工具注册检查未覆盖完整红队挂载，现已补齐。基础 cwd 修复经使用者对话确认；未做真实模型 API、演练、远端更新或重启端到端验证，未验证其他宿主版本与操作系统；未新增测试源码。
 - 详见 [Harness 0.2.1-rc.2 适配说明](docs/harness-0.2.1-rc.2.md)，包含根因、修改位置、升级步骤及验证边界。
 
 ## English
 
 - **2026-10-22, maintenance branch update** targeting Harness **0.2.1-rc.2**. Version 1.1.72 belongs to `zzfzgs-vick/dsh-purge`; original attribution and licensing remain. This does not claim an upstream release with the same version.
+- **Same-version follow-up: redteam preset loading.** This remains the **1.1.72 maintenance update**. Earlier 1.1.72 source still contained the obsolete `toolFilter`; fetch the latest master commit and fully restart the host rather than relying on the unchanged version number.
+- Remove the rejected field from the template and migrate existing spawn-tool configuration without replacing user persona text. Select the separate `redteam-executor` Agent Preset and retain `maxDepth: 1`; the executor has task/messaging tools but no subagent, workflow or ralph delegation entry points.
+- Register the executor before the commander and update executor identity recognition plus uninstall/default-preset cleanup. Commander delegation remains available.
 - Remove the obsolete cwd template from deployment configuration and runtime persona rewriting; retain the host's required working-directory context.
 - Count resident child Sessions from catalog records, associate reservations with child runs, prevent double counting and same-millisecond key collisions, and release only the matching reservation through scoped start/end events. Fix nested parent lookup and multi-root isolation.
 - Read `inbox.hasPending` as a boolean so pending input blocks auto-continue. Auto-continue remains off by default.
 - Share current-directory resolution across assembly, capture and rewind, including persisted directory-change replay for offline sessions.
 - Synchronize and replace presets/skills during ZIP updates, and repair the update preflight's child activity check.
 - Route maintenance installs and updates to this repository while preserving upstream attribution, licensing and historical references.
-- Validation: 55 JS syntax checks, 56 tool definitions, real installed Cordis/SystemPrompt interfaces, in-memory lifecycle/queue/directory scenarios and local ZIP fixtures. No new test sources, model API calls, real remote updates, restart tests or cross-platform runtime validation. See the [adaptation notes](docs/harness-0.2.1-rc.2.md).
+- Validation: 56 JS syntax checks, 56 tool definitions, real installed Cordis/SystemPrompt interfaces, in-memory lifecycle/queue/directory scenarios and local ZIP fixtures. The follow-up additionally runs the real redteam bootstrap, Loader and preset registry in an isolated directory: legacy migration, both complete preset mounts, idle Agent initialization and executor tool separation pass. This closes the earlier gap where tool registration alone did not exercise full preset loading. No new test sources, model API calls, real remote updates, restart tests or cross-platform runtime validation. See the [adaptation notes](docs/harness-0.2.1-rc.2.md).
 
 # 1.1.71
 

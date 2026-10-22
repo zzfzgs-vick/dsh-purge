@@ -8,6 +8,8 @@
 
 > **1.1.72 maintenance update · 2026-10-22:** [zzfzgs-vick/dsh-purge](https://github.com/zzfzgs-vick/dsh-purge) adapts the plugin to Harness **0.2.1-rc.2**. Fixes cover cwd templates, child concurrency and reservation cleanup, queued-input detection, current-directory/rewind handling, and ZIP resource synchronization.
 >
+> **Same-version follow-up:** redteam loading failed because Harness rejects the old `toolFilter`. The latest master migrates existing presets to a separate executor Agent Preset and preserves leaf-agent restrictions. This remains **1.1.72**: existing installs must fetch the latest master content and fully restart. Full preset loading and idle Agent initialization now pass against the installed host.
+>
 > Read the [change log](release-notes.md) and [upgrade and validation notes](docs/harness-0.2.1-rc.2.md). Runtime validation used the Windows official desktop host; Web and other platforms were not runtime-validated for this change. Original author **小杨 (YuJunZhiXue)**, attribution and license are retained. The original author statements below describe upstream history, not this branch's publishing policy.
 
 <p align="center">
