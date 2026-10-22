@@ -1,3 +1,29 @@
+# 1.1.72
+
+## 中文
+
+- **2026-10-22，维护分支更新**：适配目标改为 Harness **0.2.1-rc.2**。此版本来自 `zzfzgs-vick/dsh-purge`，保留原作者小杨（YuJunZhiXue）的署名和许可；不代表上游已发布同名版本。
+- 修复 `deployment:persona-suffix` 中旧 `{{cwd}}` 变量导致的首轮失败：同时移除配置和运行时补入路径，由宿主提供必需目录上下文。
+- 修复子智能体并发统计：联合目录与驻留 Session 计数，预留与运行任务关联后去重，避免漏计。预留键使用唯一标识，避免同毫秒申请覆盖。
+- 通过事件 carrier 获取父智能体，并以 `runId` 精确关联 start/end 与预留，修复结束后不释放名额；处理乱序结束、多根会话隔离与嵌套父链，避免释放其他任务的名额。
+- 将 `inbox.hasPending` 按布尔属性读取，有排队消息时不自动追加“继续”。默认关闭自动续跑的设置保持不变。
+- 新增共享目录解析模块，组装、目录捕获及回退读取当前目录；离线回退从持久目录变更事件恢复，而非始终使用创建时目录。
+- ZIP 更新完整替换 `presets`、`skills`，清除过期资源；演练台更新前置检查同步修复子会话活动判定。
+- 本维护分支的安装元数据、README 安装地址、更新器及演练台仓库默认值改为 `zzfzgs-vick/dsh-purge`，防止后续更新退回上游代码。上游署名、许可和历史链接保留。
+- 验证：Windows 官方宿主上 55 个 JS 文件语法检查、56 个工具注册、真实 Cordis/SystemPrompt 接口、内存并发/队列/目录场景及本地 ZIP 更新模拟通过。基础 cwd 修复经使用者对话确认；整套适配未做真实模型 API、演练、远端更新或重启端到端验证，未验证其他宿主版本与操作系统；未新增测试源码。
+- 详见 [Harness 0.2.1-rc.2 适配说明](docs/harness-0.2.1-rc.2.md)，包含根因、修改位置、升级步骤及验证边界。
+
+## English
+
+- **2026-10-22, maintenance branch update** targeting Harness **0.2.1-rc.2**. Version 1.1.72 belongs to `zzfzgs-vick/dsh-purge`; original attribution and licensing remain. This does not claim an upstream release with the same version.
+- Remove the obsolete cwd template from deployment configuration and runtime persona rewriting; retain the host's required working-directory context.
+- Count resident child Sessions from catalog records, associate reservations with child runs, prevent double counting and same-millisecond key collisions, and release only the matching reservation through scoped start/end events. Fix nested parent lookup and multi-root isolation.
+- Read `inbox.hasPending` as a boolean so pending input blocks auto-continue. Auto-continue remains off by default.
+- Share current-directory resolution across assembly, capture and rewind, including persisted directory-change replay for offline sessions.
+- Synchronize and replace presets/skills during ZIP updates, and repair the update preflight's child activity check.
+- Route maintenance installs and updates to this repository while preserving upstream attribution, licensing and historical references.
+- Validation: 55 JS syntax checks, 56 tool definitions, real installed Cordis/SystemPrompt interfaces, in-memory lifecycle/queue/directory scenarios and local ZIP fixtures. No new test sources, model API calls, real remote updates, restart tests or cross-platform runtime validation. See the [adaptation notes](docs/harness-0.2.1-rc.2.md).
+
 # 1.1.71
 
 ## 中文
