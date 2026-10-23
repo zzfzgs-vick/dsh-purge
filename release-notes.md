@@ -2,6 +2,12 @@
 
 ## 中文
 
+- **2026-10-23，同版本完整适配补充**：保持 **1.1.72**，新增 8 项功能/兼容修复和 1 项接口校验修复。按最新 master 提交区分内容，版本号不变。
+- 角色稿按会话绑定读取，修复全局 current 串用靶标；执行角色使用独立 persona；fork 同步叶子深度、工具 schema 与执行 guard，主会话派活能力保留。
+- 演练台复用维护仓库统一更新器，支持同版本提交更新及真实历史 tag；删除旧 npm 与自制重启路径。页面/更新检查正确统计驻留子会话，存在子任务时阻止更新；响应后才安排宿主重启，需完整退出时明确提示。
+- 清洗删除失效补丁 40，识别当前原生必需上下文；桌面重启复用相同检查。目录规则由所选会话解析在线/离线当前目录，支持手动覆盖，无法解析时拒绝请求。环境检查读取当前选择的红队模式。
+- 清洗与演练台共用严格来源校验，拒绝跨站、null、畸形或协议/端口不符的 Origin，保留同源 Web 及官方桌面本机转发。
+- 补充验证：63 个 JS 语法检查、真实宿主预设启动及主/spawn/fork 空闲 Agent、fork 执行限制、会话角色隔离、目录解析、真实临时回环 HTTP 请求和模拟更新/重启分支通过。未新增测试源码，未调用模型、执行演练或真实升级重启；本记录不声明本轮 GUI 手动验收已通过。根因、文件、验收步骤及边界详见 [2026-10-23 维护说明](docs/maintenance-2026-10-23.md)。
 - **2026-10-22，维护分支更新**：适配目标改为 Harness **0.2.1-rc.2**。此版本来自 `zzfzgs-vick/dsh-purge`，保留原作者小杨（YuJunZhiXue）的署名和许可；不代表上游已发布同名版本。
 - **同版本补充修复：红队模式加载失败**。本次仍属于 **1.1.72 维护分支更新**，不提升版本号。此前的 1.1.72 提交仍包含废弃 `toolFilter`，仅凭版本号不能判断是否已获取本补丁；已安装用户需更新到本分支最新 master 提交后完全退出并重开宿主。
 - 根因：Harness 在加载 `tool-subagent` 时明确拒绝 `toolFilter`；插件模板与已有用户预设同时保留旧字段，旧安装迁移未清理，因此整个红队预设被标记为 broken。
@@ -19,6 +25,8 @@
 
 ## English
 
+- **2026-10-23, same-version compatibility follow-up:** keep **1.1.72**. Fix session-bound role isolation, executor persona duties, fork leaf enforcement, unified maintenance updates and restart handling, resident-child counts/update blocking, native clean checks, selected-session rule directories, current-mode environment checks and shared strict request-origin validation. Fetch the latest master commit even when the version matches.
+- Additional validation covers 63 JS syntax checks, real host bootstrap/presets/main-spawn-fork idle Agents, actual fork execution guards, role/directory fixtures, real temporary loopback HTTP requests and mocked update/restart branches. No new test sources, model requests, live exercises, real upgrade downloads or restart tests; manual GUI acceptance is not claimed. See the [detailed follow-up](docs/maintenance-2026-10-23.md).
 - **2026-10-22, maintenance branch update** targeting Harness **0.2.1-rc.2**. Version 1.1.72 belongs to `zzfzgs-vick/dsh-purge`; original attribution and licensing remain. This does not claim an upstream release with the same version.
 - **Same-version follow-up: redteam preset loading.** This remains the **1.1.72 maintenance update**. Earlier 1.1.72 source still contained the obsolete `toolFilter`; fetch the latest master commit and fully restart the host rather than relying on the unchanged version number.
 - Remove the rejected field from the template and migrate existing spawn-tool configuration without replacing user persona text. Select the separate `redteam-executor` Agent Preset and retain `maxDepth: 1`; the executor has task/messaging tools but no subagent, workflow or ralph delegation entry points.
@@ -297,18 +305,18 @@
 - Both `resources/app/node_modules` and `resources/app/dsh/node_modules` count. If the official identity sentence and the inject-dropping return are already gone, those two markers are not required.
 - The complete-prompt patch matches both tab and space indentation.
 
-# 1.1.58
+# 1.1.63
 
 ## 中文
 
-- 版本升级到 1.1.58。
+- 版本升级到 1.1.63。
 - 打开、应用、重启都会挂上提示词。磁盘上有正文就用磁盘，没有就用规则集，再没有就用内置默认，不用再点保存。
 - 启动不再在页面发出之后改写前端 client.js，避免输入框因模块版本号对不上而消失（#63）。
 - macOS / Linux 已解包桌面端点应用后会退出并重新打开；清洗标记两种写法都认（#64）。
 
 ## English
 
-- Version 1.1.58.
+- Version 1.1.63.
 - Open, Apply, and restart all hang the prompt. A saved file wins, then the active rule set, then the built-in default. Save is not required.
 - Startup no longer rewrites frontend client.js after the page has taken a module revision, so the composer does not disappear (#63).
 - Unpacked macOS and Linux desktop builds quit and relaunch after Apply. Both inject markers count as clean (#64).
@@ -370,14 +378,14 @@
 - 版本升级到 1.1.54。
 - 官方桌面密封 asar 启动不再中途解包/杀进程：避开 Host Fiber._reload 的 INACTIVE_EFFECT / DesktopHostFatalError；补丁留给设置页「应用」。
 - 桌面 settle 延后并在 context 停用时退出；启动自愈只写盘、不 scheduleRestart（#59 / #60 / #61）。
-- 市场 tar 安装与空 sha / 缺 installed-rev 的无限重启修复仍在（#58–#61，1.1.53）。
+- 市场 tar 安装与空 sha / 缺 installed-rev 的无限重启修复仍在（#63–#61，1.1.53）。
 
 ## English
 
 - Version 1.1.54.
 - Official desktop no longer unpacks or kills the host mid-boot on a sealed asar; that raced Fiber._reload and threw INACTIVE_EFFECT / DesktopHostFatalError. Patches wait for Settings Apply.
 - Desktop settle is delayed and aborts on an inactive context; startup self-heal writes files only and does not scheduleRestart (#59 / #60 / #61).
-- Marketplace tarball install and empty-sha / missing installed-rev restart loops remain fixed (#58–#61, 1.1.53).
+- Marketplace tarball install and empty-sha / missing installed-rev restart loops remain fixed (#63–#61, 1.1.53).
 
 # 1.1.53
 
@@ -387,7 +395,7 @@
 - 修复点「应用」后无限重启（#59 / #60 / #61）：tarball 安装没有 `installed-rev`、或 `applied.json` 空 sha 时，启动不再反复 reapply+restart；对齐后不再空转重启，并加冷却。
 - web 自愈重启不再自动弹浏览器，关窗后不会再被反复拉起新窗口（#59 / #61）。
 - 空 sha 只在非密封、且清洗标记还在（或找不到插件根）时补戳，避免冲掉密封宿主自愈（#56 / #57）。
-- 市场安装：`package.json` 标明优先 tar.gz/zip，避免 Hub 退回 `git ls-remote` 失败（#58）。
+- 市场安装：`package.json` 标明优先 tar.gz/zip，避免 Hub 退回 `git ls-remote` 失败（#63）。
 
 ## English
 
@@ -395,7 +403,7 @@
 - Stop Apply/startup infinite restart (#59 / #60 / #61): missing `installed-rev` after tarball install or empty `applied.json` sha no longer reapply+restart every boot; skip restart once aligned, with a cooldown.
 - Web self-heal restart does not open a browser, so closing the window no longer respawns tabs (#59 / #61).
 - Empty-sha heal only runs when the host is not sealed and markers are present (or the plugin root is missing), so sealed-host self-heal still works (#56 / #57).
-- Marketplace install prefers tar.gz/zip in `package.json` so Hub does not fall back to a failing `git ls-remote` (#58).
+- Marketplace install prefers tar.gz/zip in `package.json` so Hub does not fall back to a failing `git ls-remote` (#63).
 
 # 1.1.52
 

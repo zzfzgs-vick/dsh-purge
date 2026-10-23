@@ -1,6 +1,8 @@
 # Harness 0.2.1-rc.2 适配说明（1.1.72）
 
-更新日期：2026-10-22。维护仓库：[zzfzgs-vick/dsh-purge](https://github.com/zzfzgs-vick/dsh-purge)。
+更新日期：2026-10-23。维护仓库：[zzfzgs-vick/dsh-purge](https://github.com/zzfzgs-vick/dsh-purge)。
+
+**2026-10-23 同版本补充已合入 1.1.72：**会话角色隔离、统一更新器、清洗与重启判定、演练台运行统计、所选会话目录、fork 叶子约束、执行角色职责、当前模式环境检查，以及接口来源校验。完整根因、修改文件、验收与验证边界见 [9 项修复说明](maintenance-2026-10-23.md)。下文保留此前适配过程及验证记录；本轮语法检查总数为 63 个。
 
 本次修改基于 1.1.71，保留原作者小杨（YuJunZhiXue）的署名、[上游来源](https://github.com/YuJunZhiXue/dsh-purge)及现有许可文件。1.1.72 是本维护分支的版本号，不代表上游已发布同名版本。本文说明以本次源码提交为准；源码归档可用不代表已经创建 Git tag、GitHub Release 或 npm 发布。
 
@@ -67,7 +69,7 @@ dsh plugin --profile web add https://github.com/zzfzgs-vick/dsh-purge/archive/re
 3. 已经应用过 1.1.71 补丁的本地安装，本次 JavaScript 和配置修复在重新加载后生效。首次安装或宿主刚升级时，按原安装流程在对应宿主的“清洗”页点“应用”，等待成功重启。
 4. 新开一轮提问，确认不再出现 `unknown prompt variable "{{cwd}}"`。涉及并发、目录切换或自动续跑时，可按下节场景复核。
 
-不要只复制现有文件而漏掉新增的 `lib/working-directory.js` 或 `lib/redteam/executor-preset.js`。手动同步时还需同步 `presets`、`skills` 目录。npm 上没有本插件，不能使用 `pnpm add dsh-purge` 安装。
+不要只复制现有文件而漏掉新增的 `lib/working-directory.js`、`lib/redteam/executor-preset.js`、`lib/redteam/session-binding.js` 或 `lib/request-origin.js`。手动同步时还需同步 `presets`、`skills` 目录。npm 上没有本插件，不能使用 `pnpm add dsh-purge` 安装。
 
 ## 验证证据及边界
 
@@ -86,6 +88,8 @@ dsh plugin --profile web add https://github.com/zzfzgs-vick/dsh-purge/archive/re
 本轮不新增测试源码。官方 Web、其他操作系统及其他 Harness 版本未完成本次运行验证；不要把共享代码的本地接口验证当成这些环境的完整兼容性保证。
 
 ## English summary
+
+The 2026-10-23 follow-up keeps version 1.1.72 and adds nine functional/compatibility and request-origin fixes, including session-bound roles, unified maintenance updates, current-directory rules and fork leaf enforcement. Read the [follow-up notes](maintenance-2026-10-23.md) for the current behavior, 63-file syntax validation and manual acceptance checklist. Earlier validation records below describe the preceding patches.
 
 Version 1.1.72 is the `zzfzgs-vick/dsh-purge` maintenance branch adaptation for Harness 0.2.1-rc.2. It removes the obsolete cwd template, corrects child concurrency and reservation lifecycle handling, reads the boolean inbox flag, shares current-directory resolution with rewind, synchronizes presets and skills during ZIP updates, and fixes the update preflight's child-state check. A same-version follow-up replaces the rejected redteam `toolFilter` with a separate executor preset, migrates existing configuration without replacing user persona text, and preserves leaf-agent restrictions. Install and update URLs point to this maintenance repository; original attribution and licensing remain intact. Existing 1.1.72 installs must fetch the latest master content and fully restart the host to receive this follow-up.
 

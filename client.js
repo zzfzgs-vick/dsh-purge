@@ -100,10 +100,18 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 		}
 
 		function rulesApi(op, extra) {
+			const body = Object.assign({ op: op }, extra || {});
+			if (!body.cwd) {
+				try {
+					const sessions = rewindSessions || (rewindHost && rewindHost.sessions);
+					const sessionId = sessions ? currentSessionId(sessions) : "";
+					if (sessionId) body.sessionId = sessionId;
+				} catch { /* 未选择会话时保留全局规则视图 */ }
+			}
 			return apiJson("/dsh-purge/rules", {
 				method: "POST",
 				headers: { "content-type": "application/json" },
-				body: JSON.stringify(Object.assign({ op: op }, extra || {})),
+				body: JSON.stringify(body),
 			});
 		}
 
@@ -2098,9 +2106,7 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 
 			const loadStatus = useCallback(() => {
 				const tr = tRef.current;
-				let cwd = "";
-				try { cwd = clientCurrentCwd(); } catch { /* ignore */ }
-				rulesApi("status", cwd ? { cwd: cwd } : undefined)
+				rulesApi("status")
 					.then((d) => {
 						if (d && d.ok) setSt(d);
 						else {
@@ -2249,7 +2255,6 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 							disabled: busy,
 							onClick: () => {
 								let cwd = cwdValue;
-								if (!cwd) { try { cwd = clientCurrentCwd(); } catch { /* ignore */ } }
 								doPost("scan-cwd", cwd ? { cwd: cwd } : {});
 							},
 						}, t("cwd.rescan")),
@@ -4069,20 +4074,7 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(req),
-    }).then(async (res) => {
-      const text = await res.text().catch(() => '')
-      let data = null
-      try { data = text ? JSON.parse(text) : null } catch {
-        return { ok: false, error: res.status + ' non-json: ' + String(text).slice(0, 120) }
-      }
-      if (!res.ok) {
-        return Object.assign({}, data || {}, {
-          ok: false,
-          error: (data && (data.error || data.message)) || (res.status + ' ' + res.statusText),
-        })
-      }
-      return data
-    })
+    }).then((res) => res.json())
 
     let ui = { open: true, tab: 'assets' }
     const subs = new Set()
@@ -5602,8 +5594,7 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
           a.href = url
           a.download = 'report-' + String(label || 'score').replace(/[^\w.\-]/g, '_') + '.md'
           a.click()
-          /* 立刻 revoke 会在部分浏览器里让 click 启动的下载断流,延后一拍 */
-          setTimeout(() => { try { URL.revokeObjectURL(url) } catch { /* ignore */ } }, 1000)
+          URL.revokeObjectURL(url)
           setMsg({ ok: '已下载：' + label })
         } catch (e) { setMsg({ err: '下载失败：' + ((e && e.message) || e) }) }
       }
@@ -7187,8 +7178,8 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
     /**
      * 版本显示 + 自动更新按钮。
      *
-     * 行为：挂载时静默查一次最新版本（npm registry），有新版本就把按钮点亮成
-     * 「有新版本 vX」；点击弹出确认框（当前版本 / 最新版本 / 安装位置 / 阻塞项），
+     * 行为：挂载时检查维护仓库提交，同版本更新也会点亮按钮；
+     * 点击弹出确认框（当前版本 / 最新版本 / 安装位置 / 阻塞项），
      * 确认后由 host 侧执行 安装 → 重启 dsh web（页面会断开，重启后刷新即可）。
      */
     function VersionBar(props) {
@@ -7198,17 +7189,6 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
       const [open, setOpen] = React.useState(false)
       const [msg, setMsg] = React.useState(null)
       const [countdown, setCountdown] = React.useState(0)
-      const countdownRef = React.useRef(null)
-      const clearCountdown = React.useCallback(() => {
-        if (countdownRef.current) { try { clearInterval(countdownRef.current) } catch { /* ignore */ } }
-        countdownRef.current = null
-      }, [])
-      React.useEffect(() => () => clearCountdown(), [clearCountdown])
-      const closeModal = React.useCallback(() => {
-        clearCountdown()
-        setCountdown(0)
-        setOpen(false)
-      }, [clearCountdown])
 
       const check = (silent) => {
         if (!silent) setBusy(true)
@@ -7236,13 +7216,16 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
         api({ op: 'updateApply', target: (info && info.latest) || undefined }).then((r) => {
           setBusy(false)
           if (!r || r.ok === false) { setMsg({ err: (r && r.error) || '更新失败' }); return }
-          setMsg({ ok: '已安装 ' + (r.installed || '') + '，正在重启当前宿主…' })
+          setMsg({ ok: r.note || '更新已完成，请按提示重新加载宿主。' })
+          if (!r.restartAfter) {
+            if (r.reloadClient) window.location.reload()
+            return
+          }
           /* 重启会断开这个页面：倒计时提示用户稍后刷新 */
           setCountdown(6)
-          clearCountdown()
-          countdownRef.current = setInterval(() => {
+          const t = setInterval(() => {
             setCountdown((n) => {
-              if (n <= 1) { clearCountdown(); window.location.reload(); return 0 }
+              if (n <= 1) { clearInterval(t); window.location.reload(); return 0 }
               return n - 1
             })
           }, 1000)
@@ -7267,14 +7250,14 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
           ? h('button', {
               className: 'rt-btn rt-btn-primary', disabled: busy,
               onClick: () => { setOpen(true); setMsg(null) },
-              title: '发现新版本 ' + latest + '：点击查看并一键更新（会重启当前宿主）',
-            }, busy ? '检查中…' : '有新版本 v' + latest)
+              title: '发现维护分支更新：点击查看并更新（同版本也可能包含新提交，会重启当前宿主）',
+            }, busy ? '检查中…' : '有维护更新')
           : h('button', {
               className: 'rt-btn', disabled: busy, onClick: () => check(false),
-              title: '重新检查 npm 上的最新版本',
+              title: '重新检查维护仓库的最新提交',
             }, busy ? '检查中…' : '检查更新'),
         open
-          ? h('div', { className: 'rt-modal', 'aria-hidden': 'true', onClick: closeModal },
+          ? h('div', { className: 'rt-modal', 'aria-hidden': 'true', onClick: () => setOpen(false) },
               h('div', { className: 'rt-modal-box', onClick: (e) => e.stopPropagation() },
                 h('h4', { style: { marginTop: 0 } }, '更新 RedTeam 模式'),
                 h('div', { className: 'rt-kv' }, h('b', null, '当前版本'), h('span', null, current || '未知')),
@@ -7293,14 +7276,14 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
                   ? h('div', { className: 'rt-foot', style: { padding: '4px 0' } }, notes.map((n, i) => h('div', { key: 'n' + i }, n)))
                   : null,
                 h('div', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)', margin: '8px 0' } },
-                  '更新过程：安装新版本 → 自动重启当前宿主（官方 exe / 社区版 / dsh web；当前页面会断开，约 5–10 秒后自动刷新）。'
+                  '同版本也可能包含维护更新。完成后按提示重启，或从托盘完全退出再打开。'
                   + '重启前会检查有没有智能体在跑，有就拦住不动。'),
                 msg ? h('div', { className: msg.err ? 'rt-err' : 'rt-foot' }, msg.err || msg.ok) : null,
                 countdown > 0
                   ? h('div', { className: 'rt-foot' }, '宿主正在重启，' + countdown + ' 秒后自动刷新页面…')
                   : null,
                 h('div', { style: { display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 } },
-                  h('button', { className: 'rt-btn', onClick: closeModal }, '关闭'),
+                  h('button', { className: 'rt-btn', onClick: () => setOpen(false) }, '关闭'),
                   h('button', {
                     className: 'rt-btn rt-btn-primary',
                     disabled: busy || blockers.length > 0 || mode === 'dev',
@@ -8025,7 +8008,7 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 		function isRedteamPresetId(value) {
 			const text = String(value || "").trim();
 			if (!text) return false;
-			if (text === "redteam") return true;
+			if (text === "redteam" || text === "redteam-executor") return true;
 			if (/^red[\s_-]*team$/i.test(text)) return true;
 			const label = text.replace(/不是红队/g, "").replace(/非红队/g, "");
 			if (/红队/.test(label)) return true;
@@ -8044,45 +8027,6 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 			try {
 				const header = sess.header;
 				if (header && typeof header.agentPreset === "string") return header.agentPreset;
-			} catch { /* ignore */ }
-			return "";
-		}
-
-		function readSessionCwd(sess) {
-			if (!sess || typeof sess !== "object") return "";
-			try {
-				const pv = sess.projectionValues;
-				if (pv && typeof pv.cwd === "string" && pv.cwd.trim()) return pv.cwd.trim();
-			} catch { /* ignore */ }
-			try {
-				if (typeof sess.cwd === "string" && sess.cwd.trim()) return sess.cwd.trim();
-			} catch { /* ignore */ }
-			try {
-				const header = sess.header;
-				if (header && typeof header.cwd === "string" && header.cwd.trim()) return header.cwd.trim();
-			} catch { /* ignore */ }
-			return "";
-		}
-
-		function clientCurrentCwd() {
-			try {
-				const sessions = rewindSessions || (rewindHost && rewindHost.sessions);
-				if (!sessions) return "";
-				const sid = currentSessionId(sessions);
-				if (!sid) return "";
-				try {
-					const snap = typeof sessions.list?.getSnapshot === "function" ? sessions.list.getSnapshot() : null;
-					const sess = snap && snap.byId ? snap.byId[sid] : null;
-					const found = readSessionCwd(sess);
-					if (found) return found;
-				} catch { /* ignore */ }
-				try {
-					const actx = typeof sessions.scope === "function" ? sessions.scope(sid) : undefined;
-					const face = typeof sessions.sessionOf === "function" ? sessions.sessionOf(actx) : undefined;
-					const faceSnap = face && typeof face.getSnapshot === "function" ? face.getSnapshot() : face;
-					const found = readSessionCwd(faceSnap);
-					if (found) return found;
-				} catch { /* ignore */ }
 			} catch { /* ignore */ }
 			return "";
 		}

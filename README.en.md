@@ -10,6 +10,8 @@
 >
 > **Same-version follow-up:** redteam loading failed because Harness rejects the old `toolFilter`. The latest master migrates existing presets to a separate executor Agent Preset and preserves leaf-agent restrictions. This remains **1.1.72**: existing installs must fetch the latest master content and fully restart. Full preset loading and idle Agent initialization now pass against the installed host.
 >
+> **2026-10-23 follow-up, still 1.1.72:** session-bound roles, executor duties and fork leaf restrictions, unified maintenance updates, clean/restart checks, resident-child counts, selected-session rule directories, current-mode environment checks and strict request-origin validation are now synchronized. See the [nine-fix notes and acceptance checklist](docs/maintenance-2026-10-23.md). Fetch the latest master even when the displayed version matches.
+>
 > Read the [change log](release-notes.md) and [upgrade and validation notes](docs/harness-0.2.1-rc.2.md). Runtime validation used the Windows official desktop host; Web and other platforms were not runtime-validated for this change. Original author **小杨 (YuJunZhiXue)**, attribution and license are retained. The original author statements below describe upstream history, not this branch's publishing policy.
 
 <p align="center">

@@ -319,6 +319,7 @@
       config:
         provider: fork
         toolName: subagent_fork
+        maxDepth: 1
         backgroundMode: continuable
 
     # Production dsh does not install these optional providers. Install the
